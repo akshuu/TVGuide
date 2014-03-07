@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -183,9 +184,11 @@ public class GuideActivity extends Activity {
 			
 			Log.d(TAG, "mSchedules size == " + mSchedules.size());
 			
-			Schedules test = mSchedules.get("002");
-			Log.d(TAG, "Schedules for channel : 002 == ");
-			for(Schedule sch : test.getSchedules()){
+			Schedules test = mSchedules.get("371");
+			Log.d(TAG, "Schedules for channel : 002 == "  +test.getSchedules().size());
+			List<Schedule> temp = test.getSchedules();
+			Collections.sort(temp);
+			for(Schedule sch : temp){
 				Log.d(TAG, "Schedule : " + sch.getStartDate() +  " :: " +sch.getStartTime() + " , prog = " + sch.getProgram().getTitle() + " , genre == " + sch.getProgram().getGenre());;
 			}
 		} catch (JSONException e) {

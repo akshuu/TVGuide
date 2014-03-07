@@ -1,7 +1,15 @@
 package com.akshat.peel.tvguide.data;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-public class Schedule {
+import android.util.Log;
+
+
+public class Schedule implements Comparable<Schedule> {
+
+	private static final String TAG = "PeelGuide";
 
 	private String dStartTime;
 	private String dStartDate;
@@ -92,6 +100,31 @@ public class Schedule {
 		} else if (!tDuration.equals(other.tDuration))
 			return false;
 		return true;
+	}
+
+	@Override
+	public int compareTo(Schedule another) {
+		String dateTime = dStartDate+'T'+dStartTime;
+		String otherDateTime = another.getStartDate()+'T'+another.getStartTime();
+		
+		SimpleDateFormat sdf = new SimpleDateFormat();
+		sdf.applyPattern("yyyy-MM-dd'T'kk:mm:00");
+		try {
+			Date date = sdf.parse(dateTime);
+			Date other = sdf.parse(otherDateTime);
+			
+			if(date.after(other))
+				return 1;
+			else if(date.before(other))
+				return -1;
+			else 
+				return 0;
+		} catch (ParseException e) {
+			Log.d(TAG, "Error parsing date");
+		}
+		
+		
+		return 0;
 	}
 	
 	

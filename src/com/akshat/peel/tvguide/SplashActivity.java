@@ -60,16 +60,16 @@ public class SplashActivity extends Activity {
 	}
 
 	private void getData() {
-		handler.post(new Runnable() {
-			
-			@Override
-			public void run() {
-				String guideData = getGuideJSON();
-				updateResults(guideData);
-				Log.d(TAG, "JSON == " + guideData);
-				
-			}
-		});
+//		handler.post(new Runnable() {
+//			
+//			@Override
+//			public void run() {
+//				String guideData = getGuideJSON();
+//				updateResults(guideData);
+//				Log.d(TAG, "JSON == " + guideData);
+//				
+//			}
+//		});
 	}
 	
 	protected void updateResults(final String guideData) {
