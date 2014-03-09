@@ -7,6 +7,9 @@ import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -46,8 +49,11 @@ import com.akshat.peel.tvguide.adapters.SimpleListAdapter;
 import com.akshat.peel.tvguide.data.Program;
 import com.akshat.peel.tvguide.data.Schedule;
 import com.akshat.peel.tvguide.data.Schedules;
+import com.akshat.peel.tvguide.utils.Utils;
 
 public class GuideActivity extends Activity {
+
+	private static final int HEIGHT_PX = 75;
 
 	private static final String TAG = "PeelGuide";
 
@@ -95,8 +101,8 @@ public class GuideActivity extends Activity {
 		channelLayout = (LinearLayout) findViewById(R.id.channels_layout);
 		mHorizontalView = (HorizontalScrollView) findViewById(R.id.programs_scroll_layout);
 		programLayout = (LinearLayout) findViewById(R.id.program_layout);
-		
-//		mListView = (TwoWayView) findViewById(R.id.list);
+
+		//		mListView = (TwoWayView) findViewById(R.id.list);
 //        mListView.setItemMargin(10);
         
 //        mChannelList = (TwoWayView) findViewById(R.id.channellist);
@@ -210,6 +216,8 @@ public class GuideActivity extends Activity {
 		if(item.getItemId() == R.id.action_refresh){
 			mStatusView.setVisibility(View.VISIBLE);
 			mErrorMessageView.setVisibility(View.GONE);
+			programLayout.removeAllViews();
+			channelLayout.removeAllViews();
 			getDataFromServer();
 		}
 		return super.onOptionsItemSelected(item);
@@ -217,19 +225,13 @@ public class GuideActivity extends Activity {
 	
 	
 	/// Utility functions 
-	
-	private String getDate(){
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddkkmm00",Locale.US);
-		String date = sdf.format(new Date());
-		Log.d(TAG, "The date is == " + date);
-		return date;
-	}
+
 	
 	private String getGuideJSON(){
 		StringBuilder builder = new StringBuilder();
 		HttpClient client = new DefaultHttpClient();
 		HttpGet httpGet = new HttpGet(
-				"http://peelapp.zelfy.com/epg/schedules/stillrunning/DITV807?start=" + getDate() + "&window=4&userid=83073892&roomid=1");
+				"http://peelapp.zelfy.com/epg/schedules/stillrunning/DITV807?start=" + Utils.getDate() + "&window=4&userid=83073892&roomid=1");
 		
 		try {
 			HttpResponse response = client.execute(httpGet);
@@ -262,36 +264,16 @@ public class GuideActivity extends Activity {
 			JSONObject obj = new JSONObject(guideData);
 			JSONArray array = obj.getJSONArray("schedules");
 			
-			Log.d(TAG, "Array == " + array.length());
 			for(int i=0;i<array.length();i++){
 				JSONObject scheduleJSON = array.getJSONObject(i);
 				Schedules schedule = parseSchedule(scheduleJSON);
-				//mSchedules.put(schedule.getChannelNumber(), schedule);
 			}
 			
 			
 			Log.d(TAG, "mSchedules size == " + mSchedules.size());
 			
-			/*Schedules test = mSchedules.get("371");
-			Log.d(TAG, "Schedules for channel : 002 == "  +test.getSchedules().size());
-			List<Schedule> temp = test.getSchedules();
-			Collections.sort(temp);
-			for(Schedule sch : temp){
-				Log.d(TAG, "Schedule : " + sch.getStartDate() +  " :: " +sch.getStartTime() + " , prog = " + sch.getProgram().getTitle() + " , genre == " + sch.getProgram().getGenre());;
-			}*/
-			
-//			channelAdapter = new ChannelAdapter(getApplicationContext(), mSchedules.keySet());
-//			lvChannels.setAdapter(channelAdapter);
-			
-			// Uncomment this for old approach
 			createUI();
 			
-//			channelAdapter.updateData(mSchedules.keySet());
-//			channelAdapter.notifyDataSetChanged();
-			
-//			adapter.updateData(mSchedules);
-//			adapter.notifyDataSetChanged();
-			///createUI_TwoWay()
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -301,64 +283,122 @@ public class GuideActivity extends Activity {
 	// Optimize : Create UI few layouts at  a time...
 	private void createUI() {
 		Set<String> keys = mSchedules.keySet();
-		// Sorting the keys
-		TreeSet<String> sortedKeys = new TreeSet<String>(keys);
-//		mHorizontalView = new HorizontalScrollView(getApplicationContext());
-		android.widget.LinearLayout.LayoutParams paramsRow = new LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-				android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
-		paramsRow.setMargins(0, 0, 0, 5);
-		android.widget.LinearLayout.LayoutParams paramsHorizontalScroll = new LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.MATCH_PARENT, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
-//		mHorizontalView.setLayoutParams(paramsHorizontalScroll);
 		
 		channelLayout.setOrientation(LinearLayout.VERTICAL);
 
-//		LinearLayout layoutPrograms = new LinearLayout(getApplicationContext());
-//		layoutPrograms.setOrientation(LinearLayout.VERTICAL);
 		
-		int i=0;
-		for(String key : sortedKeys){
+//		int i=0;
+		for(String key : keys){
+//		{
+//			String key = "751";
+			
 			// For testing
-			i++;
-			if(i==30)
-				break;
+//			i++;
+//			if(i==5)
+//				break;
 			// End for testing
 			
-			LinearLayout layout = new LinearLayout(getApplicationContext());
 			LinearLayout layout2 = new LinearLayout(getApplicationContext());
-	        int ht_dp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 50, getResources().getDisplayMetrics());
+			layout2.setOrientation(LinearLayout.HORIZONTAL);
+	        int ht_dp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, HEIGHT_PX, getResources().getDisplayMetrics());
 
-
-			android.widget.LinearLayout.LayoutParams paramsChannel = new LinearLayout.LayoutParams(ht_dp, ht_dp);
-			paramsChannel.setMargins(0, 0, 5,5);
-
+			android.widget.LinearLayout.LayoutParams paramsChannel = new LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, ht_dp);
+			paramsChannel.setMargins(15, 15, 15,15);
+			
 			android.widget.LinearLayout.LayoutParams paramsPrograms = new LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, ht_dp);
-			paramsPrograms.setMargins(0, 0, 5,5);
+			paramsPrograms.setMargins(15, 15, 15,15);
 
 			View channelDetail = createChannelUI(key);
 			channelLayout.addView(channelDetail,paramsChannel);
 			
-			for(Schedule schedule : mSchedules.get(key).getSchedules()){
-				View programDetail = createProgramUI(schedule);
-				android.widget.LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(800, ht_dp);
-				params.setMargins(0, 0, 5, 5);
-				layout2.setOrientation(LinearLayout.HORIZONTAL);
-				layout2.addView(programDetail,params);
+			if(key.equals("216")){
+				Log.d(TAG, "At channel 216");
 			}
-			
-//			android.widget.LinearLayout.LayoutParams paramsPrograms = new LinearLayout.LayoutParams(channelDetail.getLayoutParams());
-			
-//			layoutPrograms.addView(layout2,paramsPrograms);
-			
+			List<Schedule> tempSchedule = new LinkedList<Schedule>(mSchedules.get(key).getSchedules());
+
+			createProgramUI(tempSchedule,layout2);
 			programLayout.addView(layout2,paramsPrograms);
-			
 		}
 		
-//		mHorizontalView.addView(layoutPrograms);
-//		mCompleteList.addView(channelLayout,paramsRow);
-//		mCompleteList.addView(mHorizontalView,paramsHorizontalScroll);
 	}
 
-	private View createProgramUI(Schedule schedule) {
+	private void createProgramUI(List<Schedule> tempSchedule,
+			LinearLayout layout2) {
+		
+        int ht_dp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, HEIGHT_PX, getResources().getDisplayMetrics());
+        boolean overflow = false;
+        boolean prog1Overflow = false;
+        boolean prog2Overflow = false;
+        
+        
+		android.widget.LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(800, ht_dp);
+		params.setMargins(0, 0, 15, 0);
+		ListIterator<Schedule> iter = tempSchedule.listIterator();
+		while(true){
+			Schedule schedule;
+			if(overflow && iter.previousIndex() != -1){
+				schedule = iter.previous();
+				overflow = false;
+				prog1Overflow = true;
+				prog2Overflow = false;
+			}else{
+				if(!iter.hasNext())
+					break;
+				schedule = iter.next();
+				overflow = false;
+			}
+			int minutes = schedule.getRemainingDuration();
+			String prog1 = schedule.getProgram().getTitle();
+			String prog2 = null;
+			
+			if(minutes <= 30){
+				// add another to the same view
+				iter.remove();			// remove the current node
+				if(iter.hasNext()){
+					schedule = iter.next();
+					minutes = schedule.getRemainingDuration();
+					if(minutes <= 30){
+						prog2 = schedule.getProgram().getTitle();
+						overflow = false;
+						iter.remove();
+					}else if(minutes > 30 && minutes <= 60){
+						overflow = true;
+						prog2Overflow = true;
+						prog2 = schedule.getProgram().getTitle();
+						schedule.setRemainingDuration(schedule.getRemainingDuration() - 30);
+					}else if(minutes > 60){
+						prog2Overflow = true;
+						schedule.setRemainingDuration(schedule.getRemainingDuration() - 60);
+						overflow = true;
+					}
+				}
+			}else if(minutes > 30 && minutes <= 60){
+				overflow = false;
+				prog2 = null;
+				iter.remove();
+			}else if(minutes > 60){
+				schedule.setRemainingDuration(schedule.getRemainingDuration() - 60);
+				prog2 = null;
+				overflow = true;
+			}
+			
+//			Log.d(TAG, "Setting the following : " + prog1 + " , prg2 = " + prog2 + ", is overflow = ? " + overflow);
+			View programDetail = createProgramUI(prog1,prog2,overflow,prog1Overflow,prog2Overflow );
+			layout2.addView(programDetail,params);
+			// Not adding more than 4 hrs of data
+			if(layout2.getChildCount() == 4)
+				break;
+		}
+		
+		if(layout2.getChildCount() < 4){
+			for(int i=layout2.getChildCount();i<4;i++){
+				View programNoInfoDetail = createProgramUI("No Info",null,false,true,false);
+				layout2.addView(programNoInfoDetail,params);
+			}
+		}
+	}
+
+	private View createProgramUI(String prog1,String prog2,boolean overflow, boolean prog1Overflow, boolean prog2Overflow) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		
 	    View rowView = inflater.inflate(R.layout.program_list_item, mHorizontalView, false);
@@ -367,11 +407,34 @@ public class GuideActivity extends Activity {
 	    TextView textViewProgTime2 = (TextView) rowView.findViewById(R.id.program2_time);
 	    TextView textViewProgName2 = (TextView)  rowView.findViewById(R.id.program2_name);
 	    
-	    textViewProgName1.setText(schedule.getProgram().getTitle());
-	    textViewProgTime1.setText(schedule.getDuration());
+	    if(prog1 != null){
+		    textViewProgName1.setText(prog1);
+		    textViewProgTime1.setText("00");
+	    }else{
+		    textViewProgTime1.setVisibility(View.GONE);
+		    textViewProgName1.setVisibility(View.GONE);
 
-	    textViewProgTime2.setVisibility(View.GONE);
-	    textViewProgName2.setVisibility(View.GONE);
+	    }
+	    
+	    if(prog2 != null){
+	    	textViewProgTime2.setText("30");
+	    	 textViewProgName2.setText(prog2);
+	    }else{
+		    textViewProgTime2.setVisibility(View.GONE);
+		    textViewProgName2.setVisibility(View.GONE);
+	    }
+	    
+	    if(prog1Overflow){
+	    	textViewProgTime1.setText(">");
+	    }
+	    else if(prog2Overflow)
+	    	textViewProgTime2.setText(">");
+//	    if(overflow && !bigOverFlow){
+//	    	if(prog1 == null)
+//	    		textViewProgTime1.setText(">");
+//	    	else
+//	    		textViewProgTime2.setText(">");
+//	    }
 	    
 	    return rowView;
 	}

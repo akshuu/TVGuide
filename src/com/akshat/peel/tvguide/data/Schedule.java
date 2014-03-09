@@ -4,6 +4,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import com.akshat.peel.tvguide.utils.Utils;
+
 import android.util.Log;
 
 
@@ -15,6 +17,8 @@ public class Schedule implements Comparable<Schedule> {
 	private String dStartDate;
 	private String tDuration;
 	private Program program;
+	private int iRemainingDuration;
+	
 	
 	public String getStartTime() {
 		return dStartTime;
@@ -38,6 +42,7 @@ public class Schedule implements Comparable<Schedule> {
 
 	public void setDuration(String tDuration) {
 		this.tDuration = tDuration;
+		iRemainingDuration = Utils.convertDurationToMinutes(tDuration);
 	}
 
 	public Program getProgram() {
@@ -48,6 +53,14 @@ public class Schedule implements Comparable<Schedule> {
 		this.program = program;
 	}
 
+	public int getRemainingDuration() {
+		return iRemainingDuration;
+	}
+
+	public void setRemainingDuration(int iRemainingDuration) {
+		this.iRemainingDuration = iRemainingDuration;
+	}
+	
 	public String toString(){
 		if(program != null){
 			return "Program name " + program.getTitle() + " of type " + program.getType() + " starts at : " + tDuration
@@ -126,7 +139,5 @@ public class Schedule implements Comparable<Schedule> {
 		
 		return 0;
 	}
-	
-	
 
 }
