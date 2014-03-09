@@ -23,7 +23,7 @@ import android.text.format.Time;
  * @author Akshat_Jain
  * 
  */
-public class Schedules implements Serializable {
+public class Schedules implements Serializable,Comparable<Schedules> {
 
 	private String sChannelName;
 	private String sChannelNumber;
@@ -120,6 +120,24 @@ public class Schedules implements Serializable {
 		} else if (!schedules.equals(other.schedules))
 			return false;
 		return true;
+	}
+
+	@Override
+	public int compareTo(Schedules another) {
+		int channelNo = -1;
+		int otherChannelNo = -1;
+		try{
+			channelNo = Integer.parseInt(sChannelNumber);
+			otherChannelNo = Integer.parseInt(another.getChannelNumber());
+		}catch(Exception ex){
+			
+		}
+		if(channelNo < otherChannelNo)
+			return -1;
+		else if(channelNo > otherChannelNo)
+			return 1;
+		else 
+			return 0;
 	}
 	
 	

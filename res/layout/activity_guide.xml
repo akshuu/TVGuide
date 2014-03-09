@@ -8,14 +8,17 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".GuideActivity" >
 
+    <FrameLayout 
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone">
      <LinearLayout
         android:id="@+id/fetchingstatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:gravity="center_horizontal"
-        android:orientation="vertical"
-        >
+        android:orientation="vertical">
 
         <ProgressBar
             style="?android:attr/progressBarStyleLarge"
@@ -33,7 +36,7 @@
             android:textAppearance="?android:attr/textAppearanceMedium" />
     </LinearLayout>
 
-      <TextView
+    <TextView
             android:id="@+id/error_status_message"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -42,5 +45,67 @@
             android:text="@string/progress"
             android:textAppearance="?android:attr/textAppearanceMedium" 
             android:visibility="gone"/>
-
+	</FrameLayout>
+     <ScrollView 
+        android:id="@+id/channel_guide_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+        
+        <LinearLayout
+            android:id="@+id/channel_program_layout"
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal" >
+       
+           <!--  <org.lucasr.twowayview.TwoWayView 
+                   android:id="@+id/channellist"
+                   style="@style/TwoWayView"
+                   android:layout_width="75dp"
+                   android:layout_height="wrap_content"
+                   android:drawSelectorOnTop="false"
+                   android:orientation="vertical"
+                   tools:context=".GuideActivity" /> -->
+            
+             <LinearLayout 
+	            android:id="@+id/channels_layout"
+	        	android:layout_width="50dp"
+	        	android:layout_height="wrap_content"
+	        	android:orientation="vertical"/>
+	        
+            <HorizontalScrollView 
+                android:id="@+id/programs_scroll_layout"
+	        	android:layout_width="match_parent"
+	        	android:background="@color/blue"
+	        	android:layout_height="fill_parent">
+                
+                <LinearLayout 
+		            android:id="@+id/program_layout"
+		        	android:layout_width="match_parent"
+		        	android:layout_height="match_parent"
+		        	android:layout_marginLeft="5dp"
+		        	android:layout_marginBottom="5dp"
+		        	android:orientation="vertical"/>
+                
+            </HorizontalScrollView> 
+            
+            
+           <!--  <org.lucasr.twowayview.TwoWayView 
+                   android:id="@+id/list"
+                   style="@style/TwoWayView"
+                   android:layout_width="wrap_content"
+                   android:layout_height="fill_parent"
+                   android:drawSelectorOnTop="false"
+                   android:orientation="horizontal"
+                   tools:context=".GuideActivity" /> 
+           <LinearLayout 
+		            android:id="@+id/program_layout"
+		        	android:layout_width="match_parent"
+		        	android:layout_height="fill_parent"
+		        	android:layout_marginLeft="5dp"
+		        	android:layout_marginBottom="5dp"
+		        	android:background="@color/blue"
+		        	android:orientation="vertical"/>-->
+    </LinearLayout>
+    </ScrollView> 
+    
 </RelativeLayout>

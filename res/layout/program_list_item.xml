@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@android:color/darker_gray"
+    android:orientation="vertical">
+    <LinearLayout
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:orientation="horizontal">
+        <TextView
+            android:text="time1"
+            android:layout_marginLeft="5dp"
+            android:id="@+id/program1_time"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/blue"
+            android:textStyle="bold" />
+        <TextView
+            android:text="name1"
+            android:id="@+id/program1_name"
+            android:layout_marginLeft="5dp"
+            android:textColor="@android:color/white"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold" />
+        </LinearLayout>
+        
+        <LinearLayout
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:orientation="horizontal">
+        <TextView
+            android:text="time2"
+            android:layout_marginLeft="5dp"
+            android:id="@+id/program2_time"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+             android:textColor="@color/blue"
+            android:textStyle="bold" />
+	    <TextView
+	        android:text="name2"
+	        android:id="@+id/program2_name"
+	        android:layout_marginLeft="5dp"
+	        android:textColor="@android:color/white"
+	        android:textAppearance="?android:attr/textAppearanceMedium"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:textStyle="bold" />
+	    </LinearLayout>
+</LinearLayout>
