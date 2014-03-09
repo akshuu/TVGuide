@@ -9,7 +9,6 @@
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:layout_width="50dp"
             android:layout_centerHorizontal="true"
-            android:background="@drawable/ic_launcher"
             android:layout_height="50dp"/> 
         
         <TextView

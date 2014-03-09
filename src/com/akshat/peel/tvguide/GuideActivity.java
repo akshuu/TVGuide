@@ -1,34 +1,22 @@
 package com.akshat.peel.tvguide;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.WeakHashMap;
+import java.util.concurrent.ExecutionException;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -44,8 +32,6 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import com.akshat.peel.tvguide.adapters.ChannelAdapter;
-import com.akshat.peel.tvguide.adapters.SimpleListAdapter;
 import com.akshat.peel.tvguide.data.Program;
 import com.akshat.peel.tvguide.data.Schedule;
 import com.akshat.peel.tvguide.data.Schedules;
@@ -58,6 +44,8 @@ public class GuideActivity extends Activity {
 	private static final String TAG = "PeelGuide";
 
 	private Map<String,Schedules> mSchedules;
+	private WeakHashMap<String, Bitmap> mChannelImage;
+	
 	
 	private HandlerThread hThread = new HandlerThread("guide");
 	private Handler handler;
@@ -73,17 +61,16 @@ public class GuideActivity extends Activity {
 	
 	private HorizontalScrollView mHorizontalView;
 	
-	private ChannelAdapter channelAdapter;
 	private LinearLayout channelLayout;
 	private LinearLayout programLayout;
 	
-	private SimpleListAdapter adapter;
 	 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_guide);
 		mSchedules = new TreeMap<String, Schedules>();
+		mChannelImage = new WeakHashMap<String, Bitmap>();
 		
 		hThread.start();
 		handler = new Handler(hThread.getLooper());
@@ -92,9 +79,6 @@ public class GuideActivity extends Activity {
 		mStatusMessageView = (TextView) findViewById(R.id.status_message);
 		mErrorMessageView  = (TextView) findViewById(R.id.error_status_message);
 		
-//		lvChannels = (ListView) findViewById(R.id.channel_list);
-//		lvPrograms = (ListView) findViewById(R.id.guide_list);
-		
 		mScrollView = (ScrollView) findViewById(R.id.channel_guide_layout);
 		mCompleteList = (LinearLayout) findViewById(R.id.channel_program_layout);
 //		
@@ -102,56 +86,6 @@ public class GuideActivity extends Activity {
 		mHorizontalView = (HorizontalScrollView) findViewById(R.id.programs_scroll_layout);
 		programLayout = (LinearLayout) findViewById(R.id.program_layout);
 
-		//		mListView = (TwoWayView) findViewById(R.id.list);
-//        mListView.setItemMargin(10);
-        
-//        mChannelList = (TwoWayView) findViewById(R.id.channellist);
-//        mChannelList.setItemMargin(10);
-        
-        
-      /*  mListView.setOnScrollListener(new TwoWayView.OnScrollListener() {
-            @Override
-            public void onScrollStateChanged(TwoWayView view, int scrollState) {
-                String stateName = "Undefined";
-                switch(scrollState) {
-                case SCROLL_STATE_IDLE:
-                    stateName = "Idle";
-                    break;
-
-                case SCROLL_STATE_TOUCH_SCROLL:
-                    stateName = "Dragging";
-                    break;
-
-                case SCROLL_STATE_FLING:
-                    stateName = "Flinging";
-                    break;
-                }
-
-//                mStateMessage = "Scroll state changed: " + stateName;
-//                refreshToast();
-            }
-
-            @Override
-            public void onScroll(TwoWayView view, int firstVisibleItem,
-                    int visibleItemCount, int totalItemCount) {
-//                mScrollMessage = "Scroll (first: " + firstVisibleItem + ", count = " + visibleItemCount + ")";
-//                refreshToast();
-            }
-        });
-
-        mListView.setRecyclerListener(new TwoWayView.RecyclerListener() {
-            @Override
-            public void onMovedToScrapHeap(View view) {
-                Log.d(TAG, "View moved to scrap heap");
-            }
-        });
-        */
-        
-//        adapter = new SimpleListAdapter(GuideActivity.this);
-//        mListView.setAdapter(adapter);
-        
-//        channelAdapter = new ChannelAdapter(getApplicationContext());
-//		mChannelList.setAdapter(channelAdapter);
 		
 		mStatusMessageView.setText(R.string.progress);
 		getDataFromServer();
@@ -168,7 +102,7 @@ public class GuideActivity extends Activity {
 			
 			@Override
 			public void run() {
-				String guideData = getGuideJSON();
+				String guideData = Utils.getJSON();
 				
 				if(mSchedules == null)
 					mSchedules = new TreeMap<String, Schedules>();
@@ -205,6 +139,11 @@ public class GuideActivity extends Activity {
 	}
 	
 	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		Utils.stopThreadPool();
+	}
+	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.splash, menu);
 		return true;
@@ -226,39 +165,6 @@ public class GuideActivity extends Activity {
 	
 	/// Utility functions 
 
-	
-	private String getGuideJSON(){
-		StringBuilder builder = new StringBuilder();
-		HttpClient client = new DefaultHttpClient();
-		HttpGet httpGet = new HttpGet(
-				"http://peelapp.zelfy.com/epg/schedules/stillrunning/DITV807?start=" + Utils.getDate() + "&window=4&userid=83073892&roomid=1");
-		
-		try {
-			HttpResponse response = client.execute(httpGet);
-			StatusLine statusLine = response.getStatusLine();
-			int statusCode = statusLine.getStatusCode();
-			if (statusCode == 200) {
-				HttpEntity entity = response.getEntity();
-				InputStream content = entity.getContent();
-				BufferedReader reader = new BufferedReader(
-						new InputStreamReader(content));
-				String line;
-				while ((line = reader.readLine()) != null) {
-					builder.append(line);
-				}
-			} else {
-				Log.e(TAG, "Failed to download file");
-			}
-		} catch (ClientProtocolException e) {
-			e.printStackTrace();
-			return null;
-		} catch (IOException e) {
-			e.printStackTrace();
-			return null;
-		}
-		return builder.toString();
-	}
-	
 	private void parse(String guideData){
 		try {
 			JSONObject obj = new JSONObject(guideData);
@@ -281,22 +187,13 @@ public class GuideActivity extends Activity {
 
 	
 	// Optimize : Create UI few layouts at  a time...
+	// probably we need to follow the adapter approach
 	private void createUI() {
 		Set<String> keys = mSchedules.keySet();
 		
 		channelLayout.setOrientation(LinearLayout.VERTICAL);
 
-		
-//		int i=0;
 		for(String key : keys){
-//		{
-//			String key = "751";
-			
-			// For testing
-//			i++;
-//			if(i==5)
-//				break;
-			// End for testing
 			
 			LinearLayout layout2 = new LinearLayout(getApplicationContext());
 			layout2.setOrientation(LinearLayout.HORIZONTAL);
@@ -307,13 +204,27 @@ public class GuideActivity extends Activity {
 			
 			android.widget.LinearLayout.LayoutParams paramsPrograms = new LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, ht_dp);
 			paramsPrograms.setMargins(15, 15, 15,15);
-
-			View channelDetail = createChannelUI(key);
+			Bitmap channelLogo;
+			
+			// If we have the image in the WeakReference?
+			if(mChannelImage.containsKey(key) && mChannelImage.get(key) != null){
+				channelLogo = mChannelImage.get(key);
+			}else{
+				try {			// This method will check for disk cache , else will fetch it from the URL.
+					channelLogo = Utils.getBitmaps(getApplicationContext(),key,mSchedules.get(key).getLogoUrl());
+					mChannelImage.put(key, channelLogo);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					channelLogo = null; 
+				} catch (ExecutionException e) {
+					e.printStackTrace();
+					channelLogo = null;
+				}
+				
+			}
+			View channelDetail = createChannelUI(key,channelLogo);
 			channelLayout.addView(channelDetail,paramsChannel);
 			
-			if(key.equals("216")){
-				Log.d(TAG, "At channel 216");
-			}
 			List<Schedule> tempSchedule = new LinkedList<Schedule>(mSchedules.get(key).getSchedules());
 
 			createProgramUI(tempSchedule,layout2);
@@ -322,6 +233,7 @@ public class GuideActivity extends Activity {
 		
 	}
 
+	// Responsible for creating the Horizontal scroll for a channel.
 	private void createProgramUI(List<Schedule> tempSchedule,
 			LinearLayout layout2) {
 		
@@ -334,8 +246,13 @@ public class GuideActivity extends Activity {
 		android.widget.LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(800, ht_dp);
 		params.setMargins(0, 0, 15, 0);
 		ListIterator<Schedule> iter = tempSchedule.listIterator();
+		
+		// This logic deteremines what needs to be added to the current view
+		// How the overflow happens
+		// We stop after adding 4 items or when the list is empty.
 		while(true){
 			Schedule schedule;
+			// If there was overflow, we need to use the same previous object.
 			if(overflow && iter.previousIndex() != -1){
 				schedule = iter.previous();
 				overflow = false;
@@ -347,11 +264,12 @@ public class GuideActivity extends Activity {
 				schedule = iter.next();
 				overflow = false;
 			}
+			
 			int minutes = schedule.getRemainingDuration();
 			String prog1 = schedule.getProgram().getTitle();
 			String prog2 = null;
 			
-			if(minutes <= 30){
+			if(minutes <= 30){			// Show is only 30 mins, so we can add another to the same view
 				// add another to the same view
 				iter.remove();			// remove the current node
 				if(iter.hasNext()){
@@ -372,11 +290,11 @@ public class GuideActivity extends Activity {
 						overflow = true;
 					}
 				}
-			}else if(minutes > 30 && minutes <= 60){
+			}else if(minutes > 30 && minutes <= 60){		// Show is only 1 hr,so we add nothing else
 				overflow = false;
 				prog2 = null;
 				iter.remove();
-			}else if(minutes > 60){
+			}else if(minutes > 60){							// Show is > 1 hr, so we need to carry it forward
 				schedule.setRemainingDuration(schedule.getRemainingDuration() - 60);
 				prog2 = null;
 				overflow = true;
@@ -390,6 +308,7 @@ public class GuideActivity extends Activity {
 				break;
 		}
 		
+		// If we have less info for the program, just show an empty area...
 		if(layout2.getChildCount() < 4){
 			for(int i=layout2.getChildCount();i<4;i++){
 				View programNoInfoDetail = createProgramUI("No Info",null,false,true,false);
@@ -398,6 +317,7 @@ public class GuideActivity extends Activity {
 		}
 	}
 
+	// This creates the individual program layout.
 	private View createProgramUI(String prog1,String prog2,boolean overflow, boolean prog1Overflow, boolean prog2Overflow) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		
@@ -429,17 +349,11 @@ public class GuideActivity extends Activity {
 	    }
 	    else if(prog2Overflow)
 	    	textViewProgTime2.setText(">");
-//	    if(overflow && !bigOverFlow){
-//	    	if(prog1 == null)
-//	    		textViewProgTime1.setText(">");
-//	    	else
-//	    		textViewProgTime2.setText(">");
-//	    }
 	    
 	    return rowView;
 	}
 
-	private View createChannelUI(String channelNumber) {
+	private View createChannelUI(String channelNumber, Bitmap channelLogo) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 	
 	    View rowView = inflater.inflate(R.layout.channel_list_item, channelLayout, false);
@@ -447,7 +361,10 @@ public class GuideActivity extends Activity {
 	    ImageView imageView = (ImageView) rowView.findViewById(R.id.channelImage);
 	    
 	    textView.setText(channelNumber);
-
+	    if(channelLogo == null)
+	    	imageView.setBackgroundResource(R.drawable.blanktv);
+	    else
+	    	imageView.setImageBitmap(channelLogo);
 	    return rowView;
 	}
 
@@ -485,7 +402,13 @@ public class GuideActivity extends Activity {
 			temp.addSchedule(schedule);
 			mSchedules.put(temp.getChannelNumber(), temp);
 		}
-//		Log.d(TAG, "Schedule created : " + (temp != null ? temp.toString() : schedules.toString()));
+		
+		// Submit the fetch Logo request here.
+		if(!mChannelImage.containsKey(schedules.getChannelNumber())){
+			Bitmap channelLogo;
+			channelLogo = Utils.fetchBitmaps(getApplicationContext(),schedules.getChannelNumber(),mSchedules.get(schedules.getChannelNumber()).getLogoUrl());
+			mChannelImage.put(schedules.getChannelNumber(), channelLogo);
+		}
 		return schedules;
 	}
 
